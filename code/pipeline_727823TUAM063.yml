@@ -1,0 +1,31 @@
+$schema: https://azuremlschemas.azureedge.net/latest/pipelineJob.schema.json
+type: pipeline
+
+experiment_name: 727823TUAM063_Pipeline
+description: Manufacturing Yield Prediction Pipeline 3 Stages
+
+jobs:
+  prep_data:
+    type: command
+    command: python data_prep.py
+    code: .
+    environment: azureml:AzureML-sklearn-1.0-ubuntu20.04-py38-cpu@latest
+    compute: azureml:serverless
+
+  train_model:
+    type: command
+    command: python train_pipeline.py
+    code: .
+    environment: azureml:AzureML-sklearn-1.0-ubuntu20.04-py38-cpu@latest
+    compute: azureml:serverless
+    depends_on:
+      - prep_data
+
+  evaluate_model:
+    type: command
+    command: python evaluate.py
+    code: .
+    environment: azureml:AzureML-sklearn-1.0-ubuntu20.04-py38-cpu@latest
+    compute: azureml:serverless
+    depends_on:
+      - train_model
