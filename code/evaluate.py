@@ -1,6 +1,7 @@
 # YASWINKUMAR N - Roll No: 727823TUAM063
 import os
 import pandas as pd
+import numpy as np
 from datetime import datetime
 import joblib
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
@@ -15,8 +16,11 @@ os.makedirs(os.path.dirname(RESULTS_PATH), exist_ok=True)
 
 # Load test data (last column is target)
 df = pd.read_csv(TEST_PATH)
-X_test = df.iloc[:, :-1]
+df = df.fillna(0)
+X_test = df.iloc[:, :-1].select_dtypes(include=[np.number])
 y_true = df.iloc[:, -1]
+if y_true.dtype == 'object':
+    y_true = pd.factorize(y_true)[0]
 
 # Load model
 model = joblib.load(MODEL_PATH)

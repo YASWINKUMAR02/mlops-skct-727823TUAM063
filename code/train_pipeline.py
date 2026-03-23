@@ -1,6 +1,7 @@
 # YASWINKUMAR N - Roll No: 727823TUAM063
 import os
 import pandas as pd
+import numpy as np
 from datetime import datetime
 import joblib
 from sklearn.ensemble import RandomForestRegressor
@@ -14,8 +15,11 @@ os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
 
 # Load training data (last column is target)
 df = pd.read_csv(TRAIN_PATH)
-X = df.iloc[:, :-1]
+df = df.fillna(0)
+X = df.iloc[:, :-1].select_dtypes(include=[np.number])
 y = df.iloc[:, -1]
+if y.dtype == 'object':
+    y = pd.factorize(y)[0]
 
 # Train a simple model
 model = RandomForestRegressor(n_estimators=100, random_state=42)

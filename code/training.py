@@ -30,8 +30,9 @@ os.makedirs(EDA_DIR, exist_ok=True)
 # Helper functions
 # ------------------------------------------------------------
 def init_mlflow():
-    # Set tracking URI to root directory mlruns
-    mlflow.set_tracking_uri(f"file://{os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'mlruns'))}")
+    # Set tracking URI to sqlite DB in root directory
+    db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'mlflow.db')).replace('\\', '/')
+    mlflow.set_tracking_uri(f"sqlite:///{db_path}")
     try:
         mlflow.create_experiment(EXPERIMENT_NAME)
     except Exception:
@@ -43,8 +44,11 @@ def load_data(path):
     df = pd.read_csv(path)
     # Just in case there are NaNs, fill with 0 for this basic run
     df = df.fillna(0)
-    X = df.iloc[:, :-1]
+    X = df.iloc[:, :-1].select_dtypes(include=[np.number])
     y = df.iloc[:, -1]
+    # If y is categorical (Pass/Fail) but we use Regressor, convert to numeric
+    if y.dtype == 'object':
+        y = pd.factorize(y)[0]
     return train_test_split(X, y, test_size=0.2, random_state=42)
 
 def perform_eda(X, y, out_dir):
@@ -74,12 +78,12 @@ def perform_eda(X, y, out_dir):
 def get_models_and_params():
     from sklearn.ensemble import RandomForestRegressor
     from sklearn.linear_model import LinearRegression
-    from sklearn.svm import SVR
+    from sklearn.tree import DecisionTreeRegressor
 
     models = {
         "RandomForest": RandomForestRegressor,
         "LinearRegression": LinearRegression,
-        "SVR": SVR,
+        "DecisionTree": DecisionTreeRegressor,
     }
     param_grid = {
         "RandomForest": {
@@ -89,9 +93,9 @@ def get_models_and_params():
         "LinearRegression": {
             "fit_intercept": [True, False],
         },
-        "SVR": {
-            "C": [0.1, 1.0],
-            "kernel": ["rbf", "linear"],
+        "DecisionTree": {
+            "max_depth": [5, 10, None],
+            "min_samples_split": [2, 5],
         },
     }
     return models, param_grid
